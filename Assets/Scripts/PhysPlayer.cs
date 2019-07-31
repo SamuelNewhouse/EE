@@ -7,14 +7,14 @@ public class PhysPlayer : MonoBehaviour
 
     Transform       camTransform;
     CapsuleCollider capsule;
-    Rigidbody       body;
+    Rigidbody       body;    
 
     Vector3 halfHeight;
     float groundScanDistance;
     float mouseX = 0f;
     float mouseY = 0f;
-
-    Vector3 lastPushDirection = Vector3.zero;
+    
+    Rigidbody pushingRigidbody = null;
 
     void Start()
     {
@@ -25,10 +25,12 @@ public class PhysPlayer : MonoBehaviour
         halfHeight = new Vector3(0, capsule.height / 2, 0);
         groundScanDistance = capsule.radius / 2;
     }
+
     void Update()
     {
         Rotation();
     }
+
     void FixedUpdate()
     {        
         Movement();
@@ -44,42 +46,48 @@ public class PhysPlayer : MonoBehaviour
     }
 
     void Movement()
-    {        
+    {
         Vector3 forward = transform.forward * Input.GetAxis("Vertical");
         Vector3 right = transform.right * Input.GetAxis("Horizontal");
         Vector3 direction = Vector3.Normalize(forward + right);
 
+        // Instantly stop pushing an object if forward input ends.
+        if (Input.GetAxis("Vertical") <= 0)
+            pushingRigidbody = null;
+
         if (direction.magnitude == 0)
-            return;        
+            return;
 
+        // Always align player motion parallel to slopes.
         Vector3 bottom = transform.position - halfHeight;        
-        RaycastHit hit;
-
+        RaycastHit hit;        
         if (Physics.Raycast(bottom, Vector3.down, out hit, groundScanDistance) && hit.normal != Vector3.up)
             direction = Vector3.Normalize(direction + Vector3.Reflect(direction, hit.normal));
 
-        body.MovePosition(transform.position + direction * runSpeed * Time.deltaTime);
+        Vector3 baseMove = direction * runSpeed * Time.deltaTime;
 
-        lastPushDirection = direction;
+        body.MovePosition(transform.position + baseMove);
+
+        if(pushingRigidbody)
+            pushingRigidbody.velocity = baseMove * 50;
     }
-
-    // @TODO: Track one object to push at a time using OnCollisionEnter and OnCollisionExit.
-    //   Place the code in Movement() to ensure perfect lock with physics simulation.
-    //   Right now, it's based on a frame-by-frame update.
-    //
-
     
-    void OnCollisionStay(Collision collision)
-    {        
+    void OnCollisionEnter(Collision collision)
+    {
         Rigidbody otherBody = collision.rigidbody;
-        if (Input.GetAxis("Vertical") > 0 && otherBody != null && !otherBody.isKinematic)
-            otherBody.velocity = lastPushDirection * runSpeed * Time.deltaTime * 50;
+        if (Input.GetAxis("Vertical") <= 0 || otherBody == null || otherBody.isKinematic)
+            return;
+
+        // Only push object if it collides within a certain vertical distance of player center.
+        Vector3 ownPosition = transform.position;        
+        Vector3 closestPoint = collision.collider.ClosestPoint(ownPosition);        
+        if (Mathf.Abs(closestPoint.y - ownPosition.y) < 0.3)
+            pushingRigidbody = otherBody;        
     }
 
     void OnCollisionExit(Collision collision)
     {
-        Rigidbody otherBody = collision.rigidbody;
-        if (otherBody != null && !otherBody.isKinematic)
-            otherBody.velocity = lastPushDirection * runSpeed * Time.deltaTime * 10;
+        if (collision.rigidbody == pushingRigidbody)
+            pushingRigidbody = null;
     }
 }
