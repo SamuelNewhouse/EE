@@ -23,7 +23,9 @@ public class PhysPlayer : MonoBehaviour
         capsule = GetComponent<CapsuleCollider>();
         body = GetComponent<Rigidbody>();
         halfHeight = new Vector3(0, capsule.height / 2, 0);
-        groundScanDistance = capsule.radius / 2;
+        groundScanDistance = capsule.radius / 2;                
+        mouseX = transform.rotation.eulerAngles.y;
+        mouseY = camTransform.localRotation.eulerAngles.x;
     }
 
     void Update()
@@ -68,12 +70,15 @@ public class PhysPlayer : MonoBehaviour
 
         body.MovePosition(transform.position + baseMove);
 
-        if(pushingRigidbody)
+        if (pushingRigidbody)
+        {
+            print("pushing");
             pushingRigidbody.velocity = baseMove * 50;
+        }
     }
     
     void OnCollisionEnter(Collision collision)
-    {
+    {        
         Rigidbody otherBody = collision.rigidbody;
         if (Input.GetAxis("Vertical") <= 0 || otherBody == null || otherBody.isKinematic)
             return;
