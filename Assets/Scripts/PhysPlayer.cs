@@ -25,7 +25,7 @@ public class PhysPlayer : MonoBehaviour
         halfHeight = new Vector3(0, capsule.height / 2, 0);
         groundScanDistance = capsule.radius / 2;                
         mouseX = transform.rotation.eulerAngles.y;
-        mouseY = camTransform.localRotation.eulerAngles.x;
+        mouseY = camTransform.rotation.eulerAngles.x;
     }
 
     void Update()
@@ -42,15 +42,15 @@ public class PhysPlayer : MonoBehaviour
     {
         mouseX += Input.GetAxis("Mouse X") * mouseSensitivity;
         mouseY -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-        mouseY = Mathf.Clamp(mouseY, -90f, 90f);
-        camTransform.localRotation = Quaternion.Euler(mouseY, 0f, 0f);
-        transform.rotation = Quaternion.Euler(0f, mouseX, 0f);
+        mouseY = Mathf.Clamp(mouseY, -89f, 89f);
+        camTransform.rotation = Quaternion.Euler(mouseY, mouseX, 0f);        
     }
 
     void Movement()
     {
-        Vector3 forward = transform.forward * Input.GetAxis("Vertical");
-        Vector3 right = transform.right * Input.GetAxis("Horizontal");
+        Vector3 forward = camTransform.forward * Input.GetAxis("Vertical");
+        forward.y = 0; // Restrict to xz plane to prevent moving up or down.
+        Vector3 right = camTransform.right * Input.GetAxis("Horizontal");
         Vector3 direction = Vector3.Normalize(forward + right);
 
         // Instantly stop pushing an object if forward input ends.
@@ -71,10 +71,7 @@ public class PhysPlayer : MonoBehaviour
         body.MovePosition(transform.position + baseMove);
 
         if (pushingRigidbody)
-        {
-            print("pushing");
             pushingRigidbody.velocity = baseMove * 50;
-        }
     }
     
     void OnCollisionEnter(Collision collision)
