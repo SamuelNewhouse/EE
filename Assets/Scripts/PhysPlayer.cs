@@ -11,7 +11,7 @@ public class PhysPlayer : MonoBehaviour
     Rigidbody       body;    
 
     Vector3 sphereCastOffset;
-    float groundScanDistance;
+    float sphereCastDistance = 0.1f;
     float mouseX = 0f;
     float mouseY = 0f;
     
@@ -19,48 +19,55 @@ public class PhysPlayer : MonoBehaviour
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        camTransform = transform.Find("PlayerCamera");
         capsule = GetComponent<CapsuleCollider>();
         body = GetComponent<Rigidbody>();
-        sphereCastOffset = new Vector3(0, -capsule.height / 2 + capsule.radius + .05f, 0);
-        groundScanDistance = 0.1f;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        camTransform = transform.Find("PlayerCamera");
+
         mouseX = transform.rotation.eulerAngles.y;
         mouseY = camTransform.rotation.eulerAngles.x;
+
+        // Bottom edge of cast sphere will start slightly above capsule bottom.
+        float sphereCastOffsetY = -capsule.height / 2 + capsule.radius + .05f;
+        sphereCastOffset = new Vector3(0, sphereCastOffsetY, 0);
     }
 
     void Update()
     {
-        Rotation();
+        Rotation(); // Camera movement should be as responsive as possible.
     }
 
     void FixedUpdate()
     {        
-        Movement();
+        Movement(); // Body movement should sync perfectly with physics.
     }
 
     void Rotation()
     {
         mouseX += Input.GetAxis("Mouse X") * mouseSensitivity;
         mouseY -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-        mouseY = Mathf.Clamp(mouseY, -89f, 89f);
+        mouseY = Mathf.Clamp(mouseY, -89.9f, 89.9f);
         camTransform.rotation = Quaternion.Euler(mouseY, mouseX, 0f);        
     }
 
     void Movement()
     {
-        Vector3 forward = camTransform.forward * Input.GetAxis("Vertical");
-        forward.y = 0; // -- Restrict to xz plane to prevent moving up or down in space.
-
+        // -- When getting forward input multiplier from camera rotation, we need to remove up/down rotation and re-normalize.
+        Vector3 camForwardFlat = camTransform.forward;
+        camForwardFlat.y = 0; // -- Restrict to xz plane to prevent moving up or down in space.
+        camForwardFlat = Vector3.Normalize(camForwardFlat);
+        
+        Vector3 forward = camForwardFlat * Input.GetAxis("Vertical");        
         Vector3 right = camTransform.right * Input.GetAxis("Horizontal");
         Vector3 direction = Vector3.Normalize(forward + right);
 
         bool noInput = (direction.magnitude == 0) ? true : false;
-        
+
         // -- Check for ground.
+        RaycastHit hit;
         Vector3 bottom = transform.position + sphereCastOffset;
-        RaycastHit hit;        
-        bool onGround = Physics.SphereCast(bottom, capsule.radius, Vector3.down, out hit, groundScanDistance);
+        bool onGround = Physics.SphereCast(bottom, capsule.radius, Vector3.down, out hit, sphereCastDistance);
 
         if (onGround)
         {
@@ -71,13 +78,12 @@ public class PhysPlayer : MonoBehaviour
                 return;
             }
 
-            // -- Create vector parallel to slope
+            // -- Create vector parallel to ground slope
             if (hit.normal != Vector3.up)
                 direction = Vector3.Normalize(direction + Vector3.Reflect(direction, hit.normal));
 
             // -- Apply friction and force
             Vector3 friction = body.velocity * (noInput ? -2400 : -500);
-
             body.AddForce(friction + direction * 2400);
         }
 
