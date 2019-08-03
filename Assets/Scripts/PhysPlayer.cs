@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class PhysPlayer : MonoBehaviour
 {
@@ -9,7 +10,7 @@ public class PhysPlayer : MonoBehaviour
     CapsuleCollider capsule;
     Rigidbody       body;    
 
-    Vector3 halfHeight;
+    Vector3 sphereCastOffset;
     float groundScanDistance;
     float mouseX = 0f;
     float mouseY = 0f;
@@ -22,8 +23,8 @@ public class PhysPlayer : MonoBehaviour
         camTransform = transform.Find("PlayerCamera");
         capsule = GetComponent<CapsuleCollider>();
         body = GetComponent<Rigidbody>();
-        halfHeight = new Vector3(0, capsule.height / 2, 0);
-        groundScanDistance = capsule.radius / 2;                
+        sphereCastOffset = new Vector3(0, -capsule.height / 2 + capsule.radius + .05f, 0);
+        groundScanDistance = 0.1f;
         mouseX = transform.rotation.eulerAngles.y;
         mouseY = camTransform.rotation.eulerAngles.x;
     }
@@ -49,33 +50,50 @@ public class PhysPlayer : MonoBehaviour
     void Movement()
     {
         Vector3 forward = camTransform.forward * Input.GetAxis("Vertical");
-        forward.y = 0; // Restrict to xz plane to prevent moving up or down.
+        forward.y = 0; // -- Restrict to xz plane to prevent moving up or down in space.
+
         Vector3 right = camTransform.right * Input.GetAxis("Horizontal");
         Vector3 direction = Vector3.Normalize(forward + right);
 
-        // Instantly stop pushing an object if forward input ends.
+        bool noInput = (direction.magnitude == 0) ? true : false;
+        
+        // -- Check for ground.
+        Vector3 bottom = transform.position + sphereCastOffset;
+        RaycastHit hit;        
+        bool onGround = Physics.SphereCast(bottom, capsule.radius, Vector3.down, out hit, groundScanDistance);
+
+        if (onGround)
+        {
+            if (noInput && body.velocity.magnitude < 0.2f)
+            {
+                body.velocity = Vector3.zero;
+                body.Sleep();
+                return;
+            }
+
+            // -- Create vector parallel to slope
+            if (hit.normal != Vector3.up)
+                direction = Vector3.Normalize(direction + Vector3.Reflect(direction, hit.normal));
+
+            // -- Apply friction and force
+            Vector3 friction = body.velocity * (noInput ? -2400 : -500);
+
+            body.AddForce(friction + direction * 2400);
+        }
+
+        /*
+        if (pushingRigidbody)
+        {
+            //pushingRigidbody.AddForce(direction * 700);
+        }
+        // -- Instantly stop pushing an object if forward input ends.
         if (Input.GetAxis("Vertical") <= 0)
             pushingRigidbody = null;
-
-        if (direction.magnitude == 0)
-            return;
-
-        // Always align player motion parallel to slopes.
-        Vector3 bottom = transform.position - halfHeight;        
-        RaycastHit hit;        
-        if (Physics.Raycast(bottom, Vector3.down, out hit, groundScanDistance) && hit.normal != Vector3.up)
-            direction = Vector3.Normalize(direction + Vector3.Reflect(direction, hit.normal));
-
-        Vector3 baseMove = direction * runSpeed * Time.deltaTime;
-
-        body.MovePosition(transform.position + baseMove);
-
-        if (pushingRigidbody)
-            pushingRigidbody.velocity = baseMove * 50;
+        */
     }
-    
+
     void OnCollisionEnter(Collision collision)
-    {        
+    {
         Rigidbody otherBody = collision.rigidbody;
         if (Input.GetAxis("Vertical") <= 0 || otherBody == null || otherBody.isKinematic)
             return;
