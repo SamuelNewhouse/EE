@@ -11,12 +11,14 @@ public class PhysPlayer : MonoBehaviour
     CapsuleCollider capsule;
     Rigidbody       body;
 
-    Vector3 sphereCastOffset;
-    float sphereCastDistance = 0.0001f;
+    Vector3 sphereCastOffset;    
+    float sphereCastDistance = 0.5f;
+    float sphereCastRadius;
+
     float mouseX;
     float mouseY;
     
-    Rigidbody pushingRigidbody = null;
+    // Rigidbody pushingRigidbody = null;
 
     void Start()
     {
@@ -30,7 +32,8 @@ public class PhysPlayer : MonoBehaviour
         mouseY = camTransform.rotation.eulerAngles.x;
 
         // -- Bottom edge of cast sphere will start slightly above capsule bottom.
-        float sphereCastOffsetY = -capsule.height / 2 + capsule.radius + .00005f;
+        sphereCastRadius = capsule.radius - sphereCastDistance / 2;
+        float sphereCastOffsetY = -capsule.height / 2 + capsule.radius;
         sphereCastOffset = new Vector3(0, sphereCastOffsetY, 0);
     }
 
@@ -67,14 +70,13 @@ public class PhysPlayer : MonoBehaviour
         bool noInput = (direction.magnitude == 0) ? true : false;
 
         // -- Check for ground.
-        RaycastHit hit;
         Vector3 lowestGroundNormal = Vector3.zero; // Lowest hit point that's under slopeLimit.
         Vector3 bottom = transform.position + sphereCastOffset;
         bool onGround = false; //Physics.SphereCast(bottom, capsule.radius, Vector3.down, out hit, sphereCastDistance);
 
         // -- Need to SphereCastAll because the player might be "on" a very steep slope when they should really be considered on a
         //    lesser slope that's further below them. Anything over the slopeLimit will be ignored for determining onGround.
-        RaycastHit[] hits = Physics.SphereCastAll(bottom, capsule.radius, Vector3.down, sphereCastDistance);
+        RaycastHit[] hits = Physics.SphereCastAll(bottom, sphereCastRadius, Vector3.down, sphereCastDistance);
 
         float lowestY = Mathf.Infinity;
 
@@ -88,27 +90,25 @@ public class PhysPlayer : MonoBehaviour
             }
         }
 
-
         if (onGround)
         {
-            if (noInput && body.velocity.magnitude < 0.2f)
-            {
-                body.velocity = Vector3.zero;
-                body.Sleep();
-                return;
-            }
-
             // -- Create vector parallel to ground slope
             if (lowestGroundNormal != Vector3.up)
                 direction = Vector3.Normalize(direction + Vector3.Reflect(direction, lowestGroundNormal));
 
             // -- Apply friction and force
-            Vector3 friction = body.velocity * (noInput ? -3400 : -500);
-            body.AddForce(friction + direction * 2400);
+            Vector3 friction = body.velocity * (noInput ? -700 : -350);
+            body.AddForce(friction + direction * 2000);
         }
-        else if(body.IsSleeping()) // Objects can slide out from under player after player sleeps.
+        else
         {
-            body.WakeUp();
+            if (body.IsSleeping()) // Objects can slide out from under player after player sleeps.
+            {
+                print("Waking Up.");
+                body.WakeUp();
+            }
+            
+            body.AddForce(Vector3.down * 700);
         }
 
         /*
