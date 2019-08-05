@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class PhysPlayer : MonoBehaviour
 {
-    [SerializeField] float runSpeed = 5;
     [SerializeField] float mouseSensitivity = 2;
     [SerializeField] float slopeLimit = 44;
 
@@ -79,14 +78,13 @@ public class PhysPlayer : MonoBehaviour
         RaycastHit[] hits = Physics.SphereCastAll(bottom, sphereCastRadius, Vector3.down, sphereCastDistance);
 
         float lowestY = Mathf.Infinity;
-
         foreach (RaycastHit h in hits)
         {            
             if (h.rigidbody != body && Vector3.Angle(Vector3.up, h.normal) <= slopeLimit && h.point.y < lowestY)
             {
-                lowestY = h.point.y;
-                lowestGroundNormal = h.normal;
                 onGround = true;
+                lowestY = h.point.y;
+                lowestGroundNormal = h.normal;                
             }
         }
 
@@ -97,18 +95,19 @@ public class PhysPlayer : MonoBehaviour
                 direction = Vector3.Normalize(direction + Vector3.Reflect(direction, lowestGroundNormal));
 
             // -- Apply friction and force
-            Vector3 friction = body.velocity * (noInput ? -700 : -350);
-            body.AddForce(friction + direction * 2000);
+            // @TODO: Git rid of magic numbers.
+            Vector3 friction = body.velocity * (noInput ? -700 : -500);
+            body.AddForce(friction + direction * 1700);
         }
         else
         {
-            if (body.IsSleeping()) // Objects can slide out from under player after player sleeps.
+            if (body.IsSleeping()) // -- Objects can slide out from under player after player sleeps.
             {
                 print("Waking Up.");
                 body.WakeUp();
             }
             
-            body.AddForce(Vector3.down * 700);
+            body.AddForce(Vector3.down * 700); // -- Gravity
         }
 
         /*

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7046558387697301289}
   - component: {fileID: 7046558387697301288}
   - component: {fileID: 7046558387697301291}
+  - component: {fileID: -5714682301940257129}
   m_Layer: 0
   m_Name: StoneBox
   m_TagString: Untagged
@@ -100,11 +101,27 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7046558387697301290}
   serializedVersion: 2
-  m_Mass: 10
-  m_Drag: 0.1
-  m_AngularDrag: 0.1
+  m_Mass: 12
+  m_Drag: 2
+  m_AngularDrag: 4
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-5714682301940257129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7046558387697301290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 491e91f4f9528e042b6ff6f5b32e254f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  element: 4
+  category: 2
+  location: 2
+  locationSubtype: 1

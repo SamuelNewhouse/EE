@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8041840503626309296}
   - component: {fileID: 8041840503626309297}
   - component: {fileID: 8041840503626309298}
+  - component: {fileID: 430421904292528058}
   m_Layer: 0
   m_Name: LightBox
   m_TagString: Untagged
@@ -100,11 +101,27 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8041840503626309299}
   serializedVersion: 2
-  m_Mass: 10
-  m_Drag: 0.1
-  m_AngularDrag: 0.1
+  m_Mass: 12
+  m_Drag: 2
+  m_AngularDrag: 4
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &430421904292528058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8041840503626309299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 491e91f4f9528e042b6ff6f5b32e254f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  element: 11
+  category: 3
+  location: 3
+  locationSubtype: 2
