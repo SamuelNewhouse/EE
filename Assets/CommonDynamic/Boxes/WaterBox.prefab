@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3693474199409727708}
   - component: {fileID: 3693474199409727707}
   - component: {fileID: 2683896613390963005}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: WaterBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 2
   location: 2
   locationSubtype: 1
+  manifestObject: {fileID: 0}

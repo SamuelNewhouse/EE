@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1585657104220236936}
   - component: {fileID: 1585657104220236939}
   - component: {fileID: -5871638865774500760}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: VoidBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,4 +125,4 @@ MonoBehaviour:
   category: 0
   location: 0
   locationSubtype: 0
-  elementCollisionHandlerScript: {fileID: 0}
+  manifestObject: {fileID: 0}

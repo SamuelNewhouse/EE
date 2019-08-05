@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7568550794352231637}
   - component: {fileID: 7568550794352231638}
   - component: {fileID: 6749804180906608325}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: OrderBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 2
   location: 1
   locationSubtype: 0
+  manifestObject: {fileID: 0}

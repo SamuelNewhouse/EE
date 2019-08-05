@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8755389524278671139}
   - component: {fileID: 8755389524278671138}
   - component: {fileID: -8643826295099315407}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BalanceBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 1
   location: 1
   locationSubtype: 0
+  manifestObject: {fileID: 0}

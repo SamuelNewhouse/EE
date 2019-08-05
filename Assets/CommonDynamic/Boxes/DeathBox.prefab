@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3056527325285546437}
   - component: {fileID: 3056527325285546436}
   - component: {fileID: 6987042358476658014}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: DeathBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 2
   location: 2
   locationSubtype: 2
+  manifestObject: {fileID: 0}

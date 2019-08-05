@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7046558387697301288}
   - component: {fileID: 7046558387697301291}
   - component: {fileID: -5714682301940257129}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: StoneBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,5 @@ MonoBehaviour:
   category: 2
   location: 2
   locationSubtype: 1
+  manifestObject: {fileID: 5720600031119677365, guid: 8cbbb3bff65b0404682e7956d7138a21,
+    type: 3}

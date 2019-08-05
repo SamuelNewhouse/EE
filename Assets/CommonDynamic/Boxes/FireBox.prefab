@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6765803685568594076}
   - component: {fileID: 6765803685568594077}
   - component: {fileID: 3218692360113715184}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FireBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 3
   location: 3
   locationSubtype: 1
+  manifestObject: {fileID: 0}

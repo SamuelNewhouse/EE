@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8221265158681241345}
   - component: {fileID: 8221265158681241344}
   - component: {fileID: -5887475225289792922}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: LifeBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 3
   location: 3
   locationSubtype: 2
+  manifestObject: {fileID: 0}

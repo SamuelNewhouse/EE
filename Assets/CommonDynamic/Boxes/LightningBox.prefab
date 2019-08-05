@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4405199031683908729}
   - component: {fileID: 4405199031683908734}
   - component: {fileID: -1291256483691226454}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: LightningBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 3
   location: 3
   locationSubtype: 1
+  manifestObject: {fileID: 0}

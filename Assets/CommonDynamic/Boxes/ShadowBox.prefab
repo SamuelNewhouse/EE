@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8844604266707320396}
   - component: {fileID: 8844604266707320397}
   - component: {fileID: 5921570393792228134}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ShadowBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,3 +125,4 @@ MonoBehaviour:
   category: 2
   location: 2
   locationSubtype: 2
+  manifestObject: {fileID: 0}
