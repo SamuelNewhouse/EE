@@ -35,6 +35,7 @@ public class ElementBox : MonoBehaviour
 
     private static float manifestSpacing = 1f;    
     private static float groundScanDistance = 1f;
+    private static float groundFloat = .001f; // For transparent materials, place them off the ground a bit.
     private static int ElementBoxesLayer = 1 << 8;
 
     private static void spawnElementManifest(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
@@ -61,6 +62,7 @@ public class ElementBox : MonoBehaviour
             for (int j = 0; j < height; j++)
             {
                 Vector3 heightOffset = hit.normal * manifestSpacing * j;
+                heightOffset.y += groundFloat;
                 Instantiate(manifestObject, startPosition + lengthOffset + heightOffset, manifestRotation);
             }
         }
@@ -103,6 +105,8 @@ public class ElementBox : MonoBehaviour
     {
         if (otherBox.element == Element.Stone)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Chaos)
+            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
     }
 
     private static void IceHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
