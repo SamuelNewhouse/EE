@@ -113,24 +113,32 @@ public class ElementBox : MonoBehaviour
     {
         if (otherBox.element == Element.Fire)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Order)
+            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
     }
 
     private static void FireHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
     {
         if (otherBox.element == Element.Ice)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Chaos)
+            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
     }
 
     private static void WaterHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
     {
         if (otherBox.element == Element.Wind)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Order)
+            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
     }
 
     private static void WindHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
     {
         if (otherBox.element == Element.Water)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Chaos)
+            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
     }
 
     private static void ShadowHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
