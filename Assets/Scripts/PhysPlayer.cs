@@ -71,7 +71,7 @@ public class PhysPlayer : MonoBehaviour
         // -- Check for ground.
         Vector3 lowestGroundNormal = Vector3.zero; // Lowest hit point that's under slopeLimit.
         Vector3 bottom = transform.position + sphereCastOffset;
-        bool onGround = false; //Physics.SphereCast(bottom, capsule.radius, Vector3.down, out hit, sphereCastDistance);
+        bool onGround = false;
 
         // -- Need to SphereCastAll because the player might be "on" a very steep slope when they should really be considered on a
         //    lesser slope that's further below them. Anything over the slopeLimit will be ignored for determining onGround.
