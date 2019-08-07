@@ -97,7 +97,7 @@ public class PhysPlayer : MonoBehaviour
             // -- Apply friction and force
             // @TODO: Git rid of magic numbers.
             Vector3 friction = body.velocity * (noInput ? -700 : -500);
-            body.AddForce(friction + direction * 1900);
+            body.AddForce(friction + direction * 2500);
         }
         else
         {

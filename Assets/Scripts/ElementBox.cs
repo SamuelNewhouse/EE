@@ -27,139 +27,142 @@ public class ElementBox : MonoBehaviour
     [SerializeField] public Location location;
     [SerializeField] public LocationSubtype locationSubtype;
     [SerializeField] public GameObject manifestObject;
-    [SerializeField] public int manifestLength = 3; // Number of manifestObjects to spawn lengthwise
-    [SerializeField] public int manifestHeight = 2; // Number of manifestObjects to spawn heightwise
 
-    private delegate void ElementBoxCollisionHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject = null, int length = 0, int height = 0);
+    private delegate void ElementBoxCollisionHandler(ElementBox otherBox);
     private ElementBoxCollisionHandler handler;
+    
+    private float groundScanDistance = 1f;
+    private float manifestGroundSpacing = .01f; // Place slightly away from floor to prevent flicker with transparent surfaces.
+    private int ElementBoxesLayer = 1 << 8;
 
-    private static float manifestSpacing = 1f;    
-    private static float groundScanDistance = 1f;
-    private static float groundFloat = .001f; // For transparent materials, place them off the ground a bit.
-    private static int ElementBoxesLayer = 1 << 8;
-
-    private static void spawnElementManifest(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void spawnElementManifest(ElementBox otherBox)
     {
         // -- Start at average position between boxes.
-        Vector3 startPosition = (thisBox.transform.position + otherBox.transform.position) / 2;
-        Vector3 thisVelocity = thisBox.GetComponentInParent<Rigidbody>().velocity;
-        Vector3 otherVelocity = otherBox.GetComponentInParent<Rigidbody>().velocity;
+        Vector3 startPosition = (transform.position + otherBox.transform.position) / 2;
 
         // -- Use highest magnitude velocity to decide on direction.
+        Vector3 thisVelocity = GetComponentInParent<Rigidbody>().velocity;
+        Vector3 otherVelocity = otherBox.GetComponentInParent<Rigidbody>().velocity;
+
         Vector3 manifestDirection = (thisVelocity.magnitude >= otherVelocity.magnitude) ? thisVelocity : otherVelocity;
+        manifestDirection.y = 0; // Prevent manifestObject from spawning at a weird angle if ElementBoxes are falling, rising, or at different heights.
         manifestDirection = Vector3.Normalize(manifestDirection);
 
         // -- Align parallel to any nearby ground surface
         RaycastHit hit;
-        if (Physics.Raycast(startPosition, Vector3.down, out hit, groundScanDistance, ~ElementBoxesLayer))
-            manifestDirection = Vector3.Normalize(manifestDirection + Vector3.Reflect(manifestDirection, hit.normal));        
+        Vector3 hitNormal = Vector3.up;
 
-        Quaternion manifestRotation = Quaternion.LookRotation(manifestDirection, hit.normal);                
-
-        for(int i = 0; i < length; i++)
-        {        
-            Vector3 lengthOffset = manifestDirection * manifestSpacing * i;
-            for (int j = 0; j < height; j++)
-            {
-                Vector3 heightOffset = hit.normal * manifestSpacing * j;
-                heightOffset.y += groundFloat;
-                Instantiate(manifestObject, startPosition + lengthOffset + heightOffset, manifestRotation);
-            }
+        if (Physics.Raycast(startPosition, Vector3.down, out hit, groundScanDistance, ~ElementBoxesLayer) && hit.normal != Vector3.up) {
+            hitNormal = hit.normal;
+            manifestDirection = Vector3.Normalize(manifestDirection + Vector3.Reflect(manifestDirection, hitNormal));
         }
 
+        Quaternion manifestRotation = Quaternion.LookRotation(manifestDirection, hitNormal);
+
+        // The center of one bottom-corner of manifestObject should start at startPosition.
+        Vector3 manifestSize = manifestObject.GetComponent<Renderer>().bounds.size;
+        Vector3 elementSize = GetComponentInParent<Renderer>().bounds.size;
+
+        // Move away from ground the proper amount.
+        startPosition += hitNormal * (manifestSize.y / 2 - elementSize.y / 2 + manifestGroundSpacing);
+        // Move away from collision point the proper amount.
+        startPosition += (manifestDirection * manifestSize.z / 2);
+
+        Instantiate(manifestObject, startPosition, manifestRotation);        
+
         Object.Destroy(otherBox.gameObject);
-        Object.Destroy(thisBox.gameObject);
+        Object.Destroy(gameObject);
     }
 
-    private static void VoidHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void VoidHandler(ElementBox otherBox)
     {
         if (otherBox.category != Category.Void && otherBox.category != Category.Balance)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void BalanceHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void BalanceHandler(ElementBox otherBox)
     {
         // -- Balance intentionally does nothing.
     }
 
-    private static void OrderHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void OrderHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Chaos)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void ChaosHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void ChaosHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Order)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void StoneHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height) {
+    private void StoneHandler(ElementBox otherBox) {
         if (otherBox.element == Element.Lightning)
             Object.Destroy(otherBox.gameObject);
         else if(otherBox.element == Element.Order)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void LightningHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void LightningHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Stone)
             Object.Destroy(otherBox.gameObject);
         else if (otherBox.element == Element.Chaos)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void IceHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void IceHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Fire)
             Object.Destroy(otherBox.gameObject);
         else if (otherBox.element == Element.Order)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void FireHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void FireHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Ice)
             Object.Destroy(otherBox.gameObject);
         else if (otherBox.element == Element.Chaos)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void WaterHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void WaterHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Wind)
             Object.Destroy(otherBox.gameObject);
         else if (otherBox.element == Element.Order)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void WindHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void WindHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Water)
             Object.Destroy(otherBox.gameObject);
         else if (otherBox.element == Element.Chaos)
-            spawnElementManifest(thisBox, otherBox, manifestObject, length, height);
+            spawnElementManifest(otherBox);
     }
 
-    private static void ShadowHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void ShadowHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Light)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void LightHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void LightHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Shadow)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void DeathHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void DeathHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Life)
             Object.Destroy(otherBox.gameObject);
     }
 
-    private static void LifeHandler(ElementBox thisBox, ElementBox otherBox, GameObject manifestObject, int length, int height)
+    private void LifeHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Death)
             Object.Destroy(otherBox.gameObject);
@@ -167,8 +170,6 @@ public class ElementBox : MonoBehaviour
 
     private void Awake()
     {
-//        manifestSpacing = manifestObject.GetComponent<Collider>().bounds.size.x;
-
         switch (element)
         {
             case Element.Void:
@@ -219,8 +220,8 @@ public class ElementBox : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        ElementBox elementBox = collision.gameObject.GetComponent<ElementBox>();
-        if (elementBox)
-            handler(this, elementBox, manifestObject, manifestLength, manifestHeight);
+        ElementBox otherBox = collision.gameObject.GetComponent<ElementBox>();
+        if (otherBox)
+            handler(otherBox);
     }
 }
