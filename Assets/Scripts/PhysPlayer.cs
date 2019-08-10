@@ -16,8 +16,6 @@ public class PhysPlayer : MonoBehaviour
 
     float mouseX;
     float mouseY;
-    
-    // Rigidbody pushingRigidbody = null;
 
     void Start()
     {
@@ -62,9 +60,9 @@ public class PhysPlayer : MonoBehaviour
         camForwardFlat.y = 0; // -- Restrict to xz plane to prevent moving up or down in space.
         camForwardFlat = Vector3.Normalize(camForwardFlat);
         
-        Vector3 forward = camForwardFlat * Input.GetAxis("Vertical");        
-        Vector3 right = camTransform.right * Input.GetAxis("Horizontal");
-        Vector3 direction = Vector3.Normalize(forward + right);
+        Vector3 forwardInput = camForwardFlat * Input.GetAxis("Vertical");        
+        Vector3 rightInput = camTransform.right * Input.GetAxis("Horizontal");
+        Vector3 direction = Vector3.Normalize(forwardInput + rightInput);
 
         bool noInput = (direction.magnitude == 0) ? true : false;
 
@@ -73,6 +71,8 @@ public class PhysPlayer : MonoBehaviour
         Vector3 bottom = transform.position + sphereCastOffset;
         bool onGround = false;
 
+        // @TODO @CLEANUP: Might not need SphereCastAll anymore. A regular raycast will probably work now that the sphereCast radius has been reduced.
+        //
         // -- Need to SphereCastAll because the player might be "on" a very steep slope when they should really be considered on a
         //    lesser slope that's further below them. Anything over the slopeLimit will be ignored for determining onGround.
         RaycastHit[] hits = Physics.SphereCastAll(bottom, sphereCastRadius, Vector3.down, sphereCastDistance);
@@ -101,44 +101,13 @@ public class PhysPlayer : MonoBehaviour
         }
         else
         {
-            if (body.IsSleeping()) // -- Objects can slide out from under player after player sleeps.
+            if (body.IsSleeping()) // -- Objects might more or slide out from under player after player sleeps.
             {
-                print("Waking Up.");
+                print("TEST NOTIFICATION: Waking Up.");
                 body.WakeUp();
             }
             
-            body.AddForce(Vector3.down * 700); // -- Gravity
+            body.AddForce(Vector3.down * 700); // -- Gravity - @TODO: Git rid of magic number.
         }
-
-        /*
-        if (pushingRigidbody)
-        {
-            //pushingRigidbody.AddForce(direction * 700);
-        }
-        // -- Instantly stop pushing an object if forward input ends.
-        if (Input.GetAxis("Vertical") <= 0)
-            pushingRigidbody = null;
-        */
-    }
-
-    /*
-    void OnCollisionEnter(Collision collision)
-    {
-        Rigidbody otherBody = collision.rigidbody;
-        if (Input.GetAxis("Vertical") <= 0 || otherBody == null || otherBody.isKinematic)
-            return;
-
-        // -- Only push object if it collides within a certain vertical distance of player center.
-        Vector3 ownPosition = transform.position;        
-        Vector3 closestPoint = collision.collider.ClosestPoint(ownPosition);        
-        if (Mathf.Abs(closestPoint.y - ownPosition.y) < 0.3)
-            pushingRigidbody = otherBody;        
-    }
-
-    void OnCollisionExit(Collision collision)
-    {
-        if (collision.rigidbody == pushingRigidbody)
-            pushingRigidbody = null;
-    }
-    */
+    }    
 }

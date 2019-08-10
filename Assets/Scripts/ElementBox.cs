@@ -34,6 +34,7 @@ public class ElementBox : MonoBehaviour
     private float groundScanDistance = 1f;
     private float manifestGroundSpacing = .01f; // Place slightly away from floor to prevent flicker with transparent surfaces.
     private int ElementBoxesLayer = 1 << 8;
+    private bool playerTouching = false;
 
     private void spawnElementManifest(ElementBox otherBox)
     {
@@ -223,5 +224,63 @@ public class ElementBox : MonoBehaviour
         ElementBox otherBox = collision.gameObject.GetComponent<ElementBox>();
         if (otherBox)
             handler(otherBox);
+        else if (collision.transform.GetComponent<PhysPlayer>())
+            playerTouching = true;
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.transform.GetComponent<PhysPlayer>())
+            playerTouching = false;
+    }
+
+    void FixedUpdate()
+    {
+        if(playerTouching && Input.GetAxis("Vertical") > 0)
+        {            
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, 1.7f, ~ElementBoxesLayer))
+            {
+                Vector3 hitNormal = hit.normal;
+                Vector3 rotationAxis;
+                float rotationAngle;
+
+                Vector3 up = transform.up;
+                Vector3 forward = transform.forward;
+                Vector3 right = transform.right;
+
+                // - Determine how much each axis vector currently aligns with hitNormal.
+                float upShare = Mathf.Abs(Vector3.Dot(hitNormal, up));
+                float forwardShare = Mathf.Abs(Vector3.Dot(hitNormal, forward));
+                float rightShare = Mathf.Abs(Vector3.Dot(hitNormal, right));
+
+                // - Calculate rotationAngle and rotationAxis from axis vector closest to hitNormal.
+                if (upShare >= forwardShare && upShare >= rightShare)
+                {
+                    rotationAngle = Vector3.Angle(hitNormal, up);
+                    rotationAxis = Vector3.Cross(hitNormal, up);
+                }
+                else if (forwardShare >= upShare && forwardShare >= rightShare)
+                {
+                    rotationAngle = Vector3.Angle(hitNormal, forward);
+                    rotationAxis = Vector3.Cross(hitNormal, forward);
+                }
+                else
+                {
+                    rotationAngle = Vector3.Angle(hitNormal, right);
+                    rotationAxis = Vector3.Cross(hitNormal, right);
+                }
+                
+                // - If best axis vector is pointing away from hitNormal, recalculate.
+                if (rotationAngle > 90)
+                {
+                    rotationAngle = Mathf.Abs(rotationAngle - 180f);                    
+                    rotationAxis = -rotationAxis;
+                }
+
+                transform.Rotate(rotationAxis, -rotationAngle, Space.World);
+                GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+            }
+        }        
     }
 }
