@@ -30,11 +30,10 @@ public class ElementBox : MonoBehaviour
 
     private delegate void ElementBoxCollisionHandler(ElementBox otherBox);
     private ElementBoxCollisionHandler handler;
-    
+
     private float groundScanDistance = 1f;
     private float manifestGroundSpacing = .01f; // Place slightly away from floor to prevent flicker with transparent surfaces.
     private int ElementBoxesLayer = 1 << 8;
-    private bool playerTouching = false;
 
     private void spawnElementManifest(ElementBox otherBox)
     {
@@ -48,14 +47,15 @@ public class ElementBox : MonoBehaviour
         Vector3 manifestDirection = (thisVelocity.magnitude >= otherVelocity.magnitude) ? thisVelocity : otherVelocity;
 
         // -- Prevent manifestObject from spawning at a weird angle if ElementBoxes are falling, rising, or at different heights.
-        manifestDirection.y = 0; 
+        manifestDirection.y = 0;
         manifestDirection = Vector3.Normalize(manifestDirection);
 
         // -- Align parallel to any nearby ground surface
         RaycastHit hit;
         Vector3 hitNormal = Vector3.up;
 
-        if (Physics.Raycast(startPosition, Vector3.down, out hit, groundScanDistance, ~ElementBoxesLayer) && hit.normal != Vector3.up) {
+        if (Physics.Raycast(startPosition, Vector3.down, out hit, groundScanDistance, ~ElementBoxesLayer) && hit.normal != Vector3.up)
+        {
             hitNormal = hit.normal;
             manifestDirection = Vector3.Normalize(manifestDirection + Vector3.Reflect(manifestDirection, hitNormal));
         }
@@ -71,7 +71,7 @@ public class ElementBox : MonoBehaviour
         // Move away from collision point the proper amount.
         startPosition += (manifestDirection * manifestSize.z / 2);
 
-        Instantiate(manifestObject, startPosition, manifestRotation);        
+        Instantiate(manifestObject, startPosition, manifestRotation);
 
         Object.Destroy(otherBox.gameObject);
         Object.Destroy(gameObject);
@@ -100,10 +100,11 @@ public class ElementBox : MonoBehaviour
             Object.Destroy(otherBox.gameObject);
     }
 
-    private void StoneHandler(ElementBox otherBox) {
+    private void StoneHandler(ElementBox otherBox)
+    {
         if (otherBox.element == Element.Lightning)
             Object.Destroy(otherBox.gameObject);
-        else if(otherBox.element == Element.Order)
+        else if (otherBox.element == Element.Order)
             spawnElementManifest(otherBox);
     }
 
@@ -217,79 +218,14 @@ public class ElementBox : MonoBehaviour
             case Element.Life:
                 handler = LifeHandler;
                 break;
-            // -- Leave null to trigger error if something else is used.
+                // -- Leave null to trigger error if something else is used.
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        ElementBox otherBox = collision.gameObject.GetComponent<ElementBox>();
-        if (otherBox)
-            handler(otherBox);
-        else if (collision.transform.GetComponent<PhysPlayer>())
-            playerTouching = true;
-    }
-
-    private void OnCollisionExit(Collision collision)
-    {
-        if (collision.transform.GetComponent<PhysPlayer>())
-            playerTouching = false;
-    }
-
-    void FixedUpdate()
-    {
-        // - To make pushing boxes up and across slopes MUCH better, lock box rotation to match slope while player is pushing the box.
-        if (playerTouching && Input.GetAxis("Vertical") > 0)
-        {            
-            RaycastHit hit;
-            if (Physics.Raycast(transform.position, Vector3.down, out hit, 1.7f, ~ElementBoxesLayer))
-            {
-                Transform newTransform = transform;
-
-                Vector3 hitNormal = hit.normal;
-                Vector3 rotationAxis;
-                float rotationAngle;
-
-                Vector3 up = transform.up;
-                Vector3 forward = transform.forward;
-                Vector3 right = transform.right;
-
-                // - Determine how much each axis vector currently aligns with hitNormal.
-                float upShare = Mathf.Abs(Vector3.Dot(hitNormal, up));
-                float forwardShare = Mathf.Abs(Vector3.Dot(hitNormal, forward));
-                float rightShare = Mathf.Abs(Vector3.Dot(hitNormal, right));
-
-                // - Calculate rotationAngle and rotationAxis from axis vector closest to hitNormal.
-                if (upShare >= forwardShare && upShare >= rightShare)
-                {
-                    rotationAngle = Vector3.Angle(hitNormal, up);
-                    rotationAxis = Vector3.Cross(hitNormal, up);
-                }
-                else if (forwardShare >= upShare && forwardShare >= rightShare)
-                {
-                    rotationAngle = Vector3.Angle(hitNormal, forward);
-                    rotationAxis = Vector3.Cross(hitNormal, forward);
-                }
-                else
-                {
-                    rotationAngle = Vector3.Angle(hitNormal, right);
-                    rotationAxis = Vector3.Cross(hitNormal, right);
-                }
-                
-                // - If best axis vector is pointing away from hitNormal, recalculate.
-                if (rotationAngle > 90)
-                {
-                    rotationAngle = Mathf.Abs(rotationAngle - 180f);                    
-                    rotationAxis = -rotationAxis;
-                }
-                
-                // - Rotate less than the full amount for a smoother transition between slopes.
-                newTransform.Rotate(rotationAxis, -rotationAngle / 4, Space.World);
-                
-                // - Manipulate Rigidbody for smoother transitions and better physics.
-                GetComponent<Rigidbody>().MoveRotation(newTransform.rotation);
-                GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
-            }
-        }
+        ElementBox box = collision.gameObject.GetComponent<ElementBox>();
+        if (box)
+            handler(box);
     }
 }

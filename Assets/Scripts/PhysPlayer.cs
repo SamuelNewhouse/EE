@@ -6,16 +6,22 @@ public class PhysPlayer : MonoBehaviour
     [SerializeField] float mouseSensitivity = 2;
     [SerializeField] float slopeLimit = 44;
 
-    Transform       camTransform;
-    CapsuleCollider capsule;
-    Rigidbody       body;
+    private Transform       camTransform;
+    private CapsuleCollider capsule;
+    private Rigidbody       body;
 
-    Vector3 sphereCastOffset;    
-    float sphereCastDistance = 0.5f;
-    float sphereCastRadius;
+    private Vector3 sphereCastOffset;    
+    private float sphereCastDistance = 0.5f;
+    private float sphereCastRadius;
 
-    float mouseX;
-    float mouseY;
+    private float mouseX;
+    private float mouseY;
+
+    private int ElementBoxesLayer = 1 << 8;
+
+    private Vector3 pushBoxAssistCapsuleCastPointOffset;
+    private float pushBoxAssistCapsuleCastRadius = 0.1f;
+    private float pushBoxAssistCapsuleCastDistance;
 
     void Start()
     {
@@ -32,6 +38,9 @@ public class PhysPlayer : MonoBehaviour
         sphereCastRadius = capsule.radius - sphereCastDistance / 2;
         float sphereCastOffsetY = -capsule.height / 2 + capsule.radius;
         sphereCastOffset = new Vector3(0, sphereCastOffsetY, 0);
+
+        pushBoxAssistCapsuleCastPointOffset = Vector3.up * (capsule.height / 2);
+        pushBoxAssistCapsuleCastDistance = capsule.radius;
     }
 
     void Update()
@@ -42,9 +51,10 @@ public class PhysPlayer : MonoBehaviour
     void FixedUpdate()
     {        
         Movement(); // -- Body movement should sync perfectly with physics.
+        PushBoxAssist(); // -- Box pushing should sync perfectly with physics.
     }
 
-    void Rotation()
+    private void Rotation()
     {
         // @TODO: Invert Axis Option
         mouseX += Input.GetAxis("Mouse X") * mouseSensitivity;
@@ -53,7 +63,7 @@ public class PhysPlayer : MonoBehaviour
         camTransform.rotation = Quaternion.Euler(mouseY, mouseX, 0f);        
     }
 
-    void Movement()
+    private void Movement()
     {
         // -- When getting forward input multiplier from camera rotation, we need to remove up/down rotation and re-normalize.
         Vector3 camForwardFlat = camTransform.forward;
@@ -109,5 +119,73 @@ public class PhysPlayer : MonoBehaviour
             
             body.AddForce(Vector3.down * 700); // -- Gravity - @TODO: Git rid of magic number.
         }
-    }    
-}
+    }
+
+    private void PushBoxAssist()
+    {
+        if (Input.GetAxis("Vertical") == 0 || Input.GetAxis("Horizontal") != 0)
+            return;
+
+        RaycastHit boxHit;
+        Vector3 point1 = transform.position + pushBoxAssistCapsuleCastPointOffset;
+        Vector3 point2 = transform.position - pushBoxAssistCapsuleCastPointOffset;        
+        Vector3 direction = body.velocity;        
+
+        if (!Physics.CapsuleCast(point1, point2, pushBoxAssistCapsuleCastRadius, direction, out boxHit, pushBoxAssistCapsuleCastDistance, ElementBoxesLayer))
+            return;
+        else
+            print("boxHit");        
+
+        Rigidbody boxBody = boxHit.collider.gameObject.GetComponent<Rigidbody>();
+        Transform boxTransform = boxBody.transform;
+
+        // -- To make pushing boxes MUCH better, lock box rotation to match slope while player is pushing the box.
+        RaycastHit floorHit;
+        if (Physics.Raycast(boxTransform.position, Vector3.down, out floorHit, 1.7f, ~ElementBoxesLayer))
+        {            
+            Vector3 hitNormal = floorHit.normal;
+            Vector3 up = boxTransform.up;
+            Vector3 forward = boxTransform.forward;
+            Vector3 right = boxTransform.right;
+
+            // -- Determine how much each axis vector currently aligns with hitNormal.
+            float upShare = Mathf.Abs(Vector3.Dot(hitNormal, up));
+            float forwardShare = Mathf.Abs(Vector3.Dot(hitNormal, forward));
+            float rightShare = Mathf.Abs(Vector3.Dot(hitNormal, right));
+
+            Vector3 rotationAxis;
+            float rotationAngle;
+
+            // -- Calculate rotationAngle and rotationAxis from axis vector closest to hitNormal.
+            if (upShare >= forwardShare && upShare >= rightShare)
+            {
+                rotationAngle = Vector3.Angle(hitNormal, up);
+                rotationAxis = Vector3.Cross(hitNormal, up);
+            }
+            else if (forwardShare >= upShare && forwardShare >= rightShare)
+            {
+                rotationAngle = Vector3.Angle(hitNormal, forward);
+                rotationAxis = Vector3.Cross(hitNormal, forward);
+            }
+            else
+            {
+                rotationAngle = Vector3.Angle(hitNormal, right);
+                rotationAxis = Vector3.Cross(hitNormal, right);
+            }
+
+            // -- If best axis vector is pointing away from hitNormal, recalculate.
+            if (rotationAngle > 90.0f)
+            {
+                rotationAngle = Mathf.Abs(rotationAngle - 180.0f);
+                rotationAxis = -rotationAxis;
+            }
+
+            // -- Rotate less than the full amount for a smoother transition between slopes.
+            boxTransform.Rotate(rotationAxis, -rotationAngle / 4, Space.World);
+
+            // -- Manipulate Rigidbody for smoother transitions and better physics.
+            boxBody.MoveRotation(boxTransform.rotation);
+            boxBody.angularVelocity = Vector3.zero;
+        }
+    }
+}    
