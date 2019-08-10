@@ -46,7 +46,9 @@ public class ElementBox : MonoBehaviour
         Vector3 otherVelocity = otherBox.GetComponentInParent<Rigidbody>().velocity;
 
         Vector3 manifestDirection = (thisVelocity.magnitude >= otherVelocity.magnitude) ? thisVelocity : otherVelocity;
-        manifestDirection.y = 0; // Prevent manifestObject from spawning at a weird angle if ElementBoxes are falling, rising, or at different heights.
+
+        // -- Prevent manifestObject from spawning at a weird angle if ElementBoxes are falling, rising, or at different heights.
+        manifestDirection.y = 0; 
         manifestDirection = Vector3.Normalize(manifestDirection);
 
         // -- Align parallel to any nearby ground surface
@@ -236,11 +238,14 @@ public class ElementBox : MonoBehaviour
 
     void FixedUpdate()
     {
-        if(playerTouching && Input.GetAxis("Vertical") > 0)
+        // - To make pushing boxes up and across slopes MUCH better, lock box rotation to match slope while player is pushing the box.
+        if (playerTouching && Input.GetAxis("Vertical") > 0)
         {            
             RaycastHit hit;
             if (Physics.Raycast(transform.position, Vector3.down, out hit, 1.7f, ~ElementBoxesLayer))
             {
+                Transform newTransform = transform;
+
                 Vector3 hitNormal = hit.normal;
                 Vector3 rotationAxis;
                 float rotationAngle;
@@ -277,10 +282,14 @@ public class ElementBox : MonoBehaviour
                     rotationAngle = Mathf.Abs(rotationAngle - 180f);                    
                     rotationAxis = -rotationAxis;
                 }
-
-                transform.Rotate(rotationAxis, -rotationAngle, Space.World);
+                
+                // - Rotate less than the full amount for a smoother transition between slopes.
+                newTransform.Rotate(rotationAxis, -rotationAngle / 4, Space.World);
+                
+                // - Manipulate Rigidbody for smoother transitions and better physics.
+                GetComponent<Rigidbody>().MoveRotation(newTransform.rotation);
                 GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
             }
-        }        
+        }
     }
 }
