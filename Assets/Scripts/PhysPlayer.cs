@@ -8,7 +8,7 @@ public class PhysPlayer : MonoBehaviour
 
     private Transform       camTransform;
     private CapsuleCollider capsule;
-    private Rigidbody       body;
+    private Rigidbody       playerBody;
 
     private Vector3 sphereCastOffset;    
     private float sphereCastDistance = 0.5f;
@@ -18,6 +18,7 @@ public class PhysPlayer : MonoBehaviour
     private float mouseY;
 
     private int ElementBoxesLayer = 1 << 8;
+    private int postProcessLayer = 1 << 30;
 
     private Vector3 pushBoxAssistCapsuleCastPointOffset;
     private float pushBoxAssistCapsuleCastRadius = 0.1f;
@@ -26,7 +27,7 @@ public class PhysPlayer : MonoBehaviour
     void Start()
     {
         capsule = GetComponent<CapsuleCollider>();
-        body = GetComponent<Rigidbody>();
+        playerBody = GetComponent<Rigidbody>();
 
         Cursor.lockState = CursorLockMode.Locked;
         camTransform = transform.Find("PlayerCamera");
@@ -39,7 +40,7 @@ public class PhysPlayer : MonoBehaviour
         float sphereCastOffsetY = -capsule.height / 2 + capsule.radius;
         sphereCastOffset = new Vector3(0, sphereCastOffsetY, 0);
 
-        pushBoxAssistCapsuleCastPointOffset = Vector3.up * (capsule.height / 2);
+        pushBoxAssistCapsuleCastPointOffset = Vector3.up * (capsule.height / 1.125f);
         pushBoxAssistCapsuleCastDistance = capsule.radius;
     }
 
@@ -85,12 +86,12 @@ public class PhysPlayer : MonoBehaviour
         //
         // -- Need to SphereCastAll because the player might be "on" a very steep slope when they should really be considered on a
         //    lesser slope that's further below them. Anything over the slopeLimit will be ignored for determining onGround.
-        RaycastHit[] hits = Physics.SphereCastAll(bottom, sphereCastRadius, Vector3.down, sphereCastDistance);
+        RaycastHit[] hits = Physics.SphereCastAll(bottom, sphereCastRadius, Vector3.down, sphereCastDistance, ~postProcessLayer);
 
         float lowestY = Mathf.Infinity;
         foreach (RaycastHit h in hits)
         {            
-            if (h.rigidbody != body && Vector3.Angle(Vector3.up, h.normal) <= slopeLimit && h.point.y < lowestY)
+            if (h.rigidbody != playerBody && Vector3.Angle(Vector3.up, h.normal) <= slopeLimit && h.point.y < lowestY)
             {
                 onGround = true;
                 lowestY = h.point.y;
@@ -106,35 +107,39 @@ public class PhysPlayer : MonoBehaviour
 
             // -- Apply friction and force
             // @TODO: Git rid of magic numbers.
-            Vector3 friction = body.velocity * (noInput ? -700 : -500);
-            body.AddForce(friction + direction * 2500);
+            Vector3 friction = playerBody.velocity * (noInput ? -700 : -500);
+            playerBody.AddForce(friction + direction * 2500);
         }
         else
         {
-            if (body.IsSleeping()) // -- Objects might more or slide out from under player after player sleeps.
+            if (playerBody.IsSleeping()) // -- Objects might more or slide out from under player after player sleeps.
             {
                 print("TEST NOTIFICATION: Waking Up.");
-                body.WakeUp();
+                playerBody.WakeUp();
             }
             
-            body.AddForce(Vector3.down * 700); // -- Gravity - @TODO: Git rid of magic number.
+            playerBody.AddForce(Vector3.down * 700); // -- Gravity - @TODO: Git rid of magic number.
         }
     }
 
     private void PushBoxAssist()
     {
+        // @TODO: Requiring 0 horizontal might be a problem for joysticks.
+        //        Change to only having the forward input direct the box velocity while ignoring non-forward velocity.
         if (Input.GetAxis("Vertical") == 0 || Input.GetAxis("Horizontal") != 0)
             return;
 
         RaycastHit boxHit;
         Vector3 point1 = transform.position + pushBoxAssistCapsuleCastPointOffset;
         Vector3 point2 = transform.position - pushBoxAssistCapsuleCastPointOffset;        
-        Vector3 direction = body.velocity;        
+        Vector3 direction = playerBody.velocity;
 
         if (!Physics.CapsuleCast(point1, point2, pushBoxAssistCapsuleCastRadius, direction, out boxHit, pushBoxAssistCapsuleCastDistance, ElementBoxesLayer))
             return;
-        else
-            print("boxHit");        
+
+        // -- If pushing too near to an edge, don't activate PushBoxAssist. @TODO: Remove magic number.
+        if ((boxHit.point - boxHit.transform.position).magnitude > 0.75f)
+            return;
 
         Rigidbody boxBody = boxHit.collider.gameObject.GetComponent<Rigidbody>();
         Transform boxTransform = boxBody.transform;
@@ -186,6 +191,10 @@ public class PhysPlayer : MonoBehaviour
             // -- Manipulate Rigidbody for smoother transitions and better physics.
             boxBody.MoveRotation(boxTransform.rotation);
             boxBody.angularVelocity = Vector3.zero;
+
+            //boxBody.MovePosition(boxTransform.position + boxBody.velocity.magnitude * playerBody.velocity.normalized * Time.fixedDeltaTime);
+            // -- Keep the box's velocity inline with player's velocity to make pushing easier.
+            boxBody.velocity = boxBody.velocity.magnitude * playerBody.velocity.normalized;
         }
     }
 }    
