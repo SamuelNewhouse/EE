@@ -191,8 +191,7 @@ public class PhysPlayer : MonoBehaviour
             // -- Manipulate Rigidbody for smoother transitions and better physics.
             boxBody.MoveRotation(boxTransform.rotation);
             boxBody.angularVelocity = Vector3.zero;
-
-            //boxBody.MovePosition(boxTransform.position + boxBody.velocity.magnitude * playerBody.velocity.normalized * Time.fixedDeltaTime);
+            
             // -- Keep the box's velocity inline with player's velocity to make pushing easier.
             boxBody.velocity = boxBody.velocity.magnitude * playerBody.velocity.normalized;
         }

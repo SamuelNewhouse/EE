@@ -32,7 +32,7 @@ public class ElementBox : MonoBehaviour
     private ElementBoxCollisionHandler handler;
 
     private float groundScanDistance = 1f;
-    private float manifestGroundSpacing = .01f; // Place slightly away from floor to prevent flicker with transparent surfaces.
+    private float manifestGroundSpacing = .01f; // -- Place slightly away from floor to prevent flicker with transparent surfaces.
     private int ElementBoxesLayer = 1 << 8;
 
     private void spawnElementManifest(ElementBox otherBox)
@@ -62,13 +62,13 @@ public class ElementBox : MonoBehaviour
 
         Quaternion manifestRotation = Quaternion.LookRotation(manifestDirection, hitNormal);
 
-        // The center of one bottom-corner of manifestObject should start at startPosition.
+        // -- The center of one bottom-corner of manifestObject should start at startPosition.
         Vector3 manifestSize = manifestObject.GetComponent<Renderer>().bounds.size;
         Vector3 elementSize = GetComponentInParent<Renderer>().bounds.size;
 
-        // Move away from ground the proper amount.
+        // -- Move away from ground the proper amount.
         startPosition += hitNormal * (manifestSize.y / 2 - elementSize.y / 2 + manifestGroundSpacing);
-        // Move away from collision point the proper amount.
+        // --  Move away from collision point the proper amount.
         startPosition += (manifestDirection * manifestSize.z / 2);
 
         Instantiate(manifestObject, startPosition, manifestRotation);
@@ -152,24 +152,32 @@ public class ElementBox : MonoBehaviour
     {
         if (otherBox.element == Element.Light)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Order)
+            spawnElementManifest(otherBox);
     }
 
     private void LightHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Shadow)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Chaos)
+            spawnElementManifest(otherBox);
     }
 
     private void DeathHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Life)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Order)
+            spawnElementManifest(otherBox);
     }
 
     private void LifeHandler(ElementBox otherBox)
     {
         if (otherBox.element == Element.Death)
             Object.Destroy(otherBox.gameObject);
+        else if (otherBox.element == Element.Chaos)
+            spawnElementManifest(otherBox);
     }
 
     private void Awake()
@@ -218,13 +226,13 @@ public class ElementBox : MonoBehaviour
             case Element.Life:
                 handler = LifeHandler;
                 break;
-                // -- Leave null to trigger error if something else is used.
+                // -- @Check: For now at least, leave null to trigger an error if something else is used.
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        ElementBox box = collision.gameObject.GetComponent<ElementBox>();
+        ElementBox box = collision.gameObject.GetComponent<ElementBox>();        
         if (box)
             handler(box);
     }

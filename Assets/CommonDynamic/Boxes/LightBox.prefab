@@ -126,6 +126,5 @@ MonoBehaviour:
   category: 3
   location: 3
   locationSubtype: 2
-  manifestObject: {fileID: 0}
-  manifestLength: 3
-  manifestHeight: 2
+  manifestObject: {fileID: 4800684665773179463, guid: 383706a1fa845184a9df4f65f4db6db8,
+    type: 3}
